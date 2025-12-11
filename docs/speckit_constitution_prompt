@@ -1,0 +1,324 @@
+# Guandan Platform - Spec Kit Constitution Prompt
+
+## 针对 GitHub Copilot 的 /speckit.constitution 提示词
+
+使用以下提示在你的项目中运行 `/speckit.constitution` 命令：
+
+```
+/speckit.constitution
+
+Create comprehensive project governance principles for "Guandan Global Platform," a Web3-integrated card game with the following foundational requirements:
+
+## 1. ARCHITECTURAL PRINCIPLES
+
+**Monorepo-First Architecture**
+- Enforce Turborepo-based monorepo structure with clear package boundaries
+- Mandate 95%+ code reusability across Web/iOS/Android platforms using React Native Skia
+- All shared code must live in packages/ directory, platform-specific code in apps/
+- Enforce strict import rules: apps can import from packages/, but packages cannot import from apps/
+
+**Technology Stack Consistency**
+- Frontend: React Native Skia (unified rendering for Web/Mobile)
+- Backend: AWS Lambda + DynamoDB + WebSocket API Gateway
+- Blockchain: Polygon (mainnet primary, Mumbai testnet for development)
+- Smart Contracts: Solidity with OpenZeppelin standards
+- Language: TypeScript (100% across all layers)
+- Package Manager: npm workspaces with npm ci for reproducibility
+
+**Web3 Integration Standards**
+- All Token-related data MUST have blockchain as Source of Truth
+- Off-chain (DynamoDB) serves as cache layer only
+- Every user token transaction MUST be verifiable on-chain
+- Support dual wallet integration: MetaMask + WalletConnect + Magic.link (internal custody)
+- Gas optimization is critical: all transactions must target <$0.01 on Polygon
+
+## 2. CODE QUALITY STANDARDS
+
+**TypeScript Enforcement**
+- 100% TypeScript with strict mode enabled
+- No `any` types without explicit justification and TODO comments
+- All public APIs must have full JSDoc with @param, @returns, @throws
+- Interfaces over type aliases for public contracts
+- Discriminated unions for complex domain types
+
+**Testing Requirements**
+- Minimum 80% code coverage for business logic (game-engine, token services)
+- Minimum 60% coverage for infrastructure code
+- Unit tests for all Lambda handlers using Jest
+- Integration tests for DynamoDB operations using LocalStack
+- E2E tests for critical user journeys (login → game → reward distribution)
+- Smart contract tests using Hardhat with 95%+ coverage
+
+**Code Organization**
+- Feature-based folder structure with clear domain boundaries
+- Services pattern for business logic, never mix UI and logic
+- Repository pattern for all data access
+- Dependency injection for testability
+- Maximum file size: 300 lines (encourage small, focused files)
+
+## 3. PERFORMANCE & SCALABILITY
+
+**Game Performance Targets**
+- Maintain 60 FPS for Skia rendering across all platforms
+- API response latency: P99 <300ms (including network roundtrip)
+- WebSocket message delivery: <100ms latency
+- Concurrent game rooms: support 100,000+ simultaneous
+- Lambda cold start: <1 second for game-critical functions
+
+**Optimization Requirements**
+- Implement Redis caching for: leaderboards, user sessions, token prices
+- Use DynamoDB Streams for real-time data sync
+- Compress images: card sprites must be <100KB per suit
+- Code splitting for frontend: lazy load Web3 components only when needed
+- Database indexes strategy: GSI for all common queries
+
+**Monitoring & Observability**
+- All Lambda functions must emit CloudWatch metrics
+- Use distributed tracing (X-Ray) for cross-service calls
+- Implement synthetic monitoring for critical paths
+- Error tracking with Sentry for frontend, CloudWatch for backend
+- Custom metrics for game-specific events (GameEnded, TokenMinted, etc.)
+
+## 4. DATA & SECURITY
+
+**Data Classification**
+- Tier 1 (Public): Game records, rankings, public profiles
+- Tier 2 (User): Wallet addresses, KYC status, transaction history
+- Tier 3 (Sensitive): Private keys (NEVER stored, only in user wallets)
+- Tier 4 (Compliance): AML flags, fraud alerts
+
+**Encryption Standards**
+- All sensitive data at rest: AWS KMS encryption (not default S3 encryption)
+- All data in transit: TLS 1.3+
+- Database encryption: enabled for both DynamoDB and RDS
+- API keys and secrets: AWS Secrets Manager, never in code or .env files
+- User passwords: never stored server-side (use passwordless auth via Magic.link or OAuth)
+
+**Authentication & Authorization**
+- JWT-based authentication with 15-minute expiry + refresh tokens
+- Authorization via roles: ADMIN, USER, MODERATOR, DAO_MEMBER
+- All API calls must be authenticated (except public endpoints: registration, public rankings)
+- Wallet signature verification for sensitive operations
+- Session timeout: 24 hours for security-critical operations
+
+**Smart Contract Security**
+- All contracts must have OpenZeppelin audit certification level
+- Require two independent security audits before mainnet deployment
+- Implement pause/unpause mechanism for emergency situations
+- Use multi-sig (5/9) for critical parameter changes
+- No upgradeability without DAO vote and 48-hour timelock
+
+## 5. WEB3 & TOKENOMICS
+
+**Token Economics Governance**
+- $PLAY token: ERC-20, total supply 1 billion (immutable after deployment)
+- $GUAN token: ERC-20, governance-only, initially non-transferable
+- Emission schedule: must follow predefined curve (no centralized decisions)
+- Token burn mechanism: 30% of transaction fees auto-burned to control inflation
+- All economic parameters must be updatable only via DAO vote
+
+**Blockchain Integration Standards**
+- Primary chain: Polygon (Layer 2, low cost, high speed)
+- All user balances are Source of Truth on-chain
+- Support cross-chain bridge to Arbitrum, Base (layer 2 alternatives)
+- Use Chainlink oracles for USD price feeds (never centralized)
+- Implement nonce management for transaction ordering
+
+**Wallet Management**
+- Support external wallets: MetaMask, WalletConnect, TrustWallet
+- Provide internal custody option (Magic.link) for new users
+- Never take control of private keys
+- Implement wallet reconnection with message signing (no transactions required)
+- Support wallet recovery flows (TREZOR, Ledger, etc.)
+
+## 6. COMPLIANCE & LEGAL
+
+**KYC/AML Requirements**
+- Implement 4-tier KYC system based on withdrawal amount
+- Tier 1: Email verification (no withdrawal limit check)
+- Tier 2: Phone verification ($1,000/day limit)
+- Tier 3: ID verification via Onfido ($10,000/day limit)
+- Tier 4: Bank account verification (unlimited)
+- Use third-party service (Onfido/Jumio) for identity verification
+
+**Geographic Restrictions**
+- Block users from: USA (SEC regulations), China (OFAC), North Korea, Iran, Syria
+- Allow whitelisted regions: EU (regulated), Singapore, Hong Kong, Japan, Canada, Australia
+- Implement geo-blocking via IP address + VPN detection
+- Document all geographic decisions in compliance runbook
+
+**Audit Trail & Reporting**
+- All user actions must be logged with timestamp, user ID, action type, result
+- Retain logs for minimum 5 years
+- Generate monthly compliance reports for regulators
+- Implement immutable audit log via blockchain events where legally required
+- Track all token transfers for tax reporting (1099 equivalent)
+
+## 7. PLATFORM FEATURES & USER EXPERIENCE
+
+**Consistency Across Platforms**
+- Identical user experience on Web, iOS, Android
+- Pixel-perfect matching using Skia rendering (no platform-specific hacks)
+- Identical feature parity across all platforms within same release
+- All platform-specific code must be abstracted into platform service layer
+- Use same animations, transitions, timing across platforms
+
+**Real-Time Features**
+- Real-time game board updates via WebSocket
+- Real-time leaderboard updates (max 1-second latency)
+- Real-time token balance updates post-transaction
+- Real-time notifications for game invitations, rewards
+- Graceful degradation if WebSocket fails (fallback to polling)
+
+**Accessibility Standards**
+- WCAG 2.1 AA compliance for Web version
+- Minimum color contrast ratio: 4.5:1 for normal text
+- Keyboard navigation support for all interactive elements
+- Screen reader compatibility for game interface
+- Font size: minimum 14px for readability
+
+## 8. DEPLOYMENT & OPERATIONS
+
+**Deployment Pipeline**
+- Automated testing on every commit (unit, integration, E2E)
+- Staging environment mirrors production (same AWS region, RDS, Redis config)
+- Canary deployment: 10% traffic for 1 hour before 100% rollout
+- Automatic rollback on error rate >1% or latency increase >50%
+- Database migrations: zero-downtime strategy with backward compatibility
+
+**Infrastructure as Code**
+- All AWS infrastructure defined in AWS CDK (TypeScript)
+- Version all infrastructure code in Git alongside application code
+- Require code review for infrastructure changes
+- Implement blue-green deployment for database schema changes
+- Backup strategy: daily snapshots, 30-day retention minimum
+
+**Monitoring & Alerting**
+- Critical alerts: Lambda error rate, DynamoDB throttling, blockchain transaction failures
+- Warning alerts: API latency P99 >300ms, failed payments, KYC processing delays
+- Mandatory response SLA: Critical 15 min, Warning 1 hour
+- On-call rotation for incident response
+- Post-incident review mandatory for all severity 1 incidents
+
+## 9. DEVELOPMENT WORKFLOW
+
+**Git & Branching Strategy**
+- Feature branches: prefix with feature number (e.g., `001-guandan-game`)
+- Branch protection: require 2 approvals + CI/CD passing before merge to main
+- Commit messages: follow conventional commits (feat:, fix:, docs:, etc.)
+- Rebase preferred over merge to maintain linear history
+- Delete branches immediately after merge
+
+**Code Review Standards**
+- All code must be reviewed by at least 2 engineers
+- Smart contract changes require dedicated security reviewer
+- API contract changes must be reviewed by backend and frontend leads
+- Review checklist: performance, security, testing, accessibility, documentation
+- Response SLA: initial review within 24 hours
+
+**Documentation Requirements**
+- README for every package explaining purpose and usage
+- API documentation auto-generated from OpenAPI spec
+- Database schema documented with ERD diagrams
+- Smart contract natspec comments for all public functions
+- Runbooks for operational tasks (deployment, scaling, incident response)
+
+## 10. PERFORMANCE BUDGETS
+
+**Bundle Size**
+- Web app: <500KB (including Skia WASM)
+- Mobile app: <150MB
+- API response: <10KB average
+- Database query: <100ms at P99
+
+**Cost Targets**
+- AWS infrastructure: <$150k/month at 500k DAU (Phase 2)
+- Blockchain gas costs: <1% of user withdrawal value
+- Third-party services (KYC, Chainlink): <$20k/month
+- CDN: <$50k/month at 100Gbps egress
+
+## 11. RELEASE & VERSIONING
+
+**Semantic Versioning**
+- Major.Minor.Patch format (e.g., 1.2.3)
+- Breaking changes: increment Major
+- New features (backward compatible): increment Minor
+- Bug fixes: increment Patch
+- Pre-release tags: alpha, beta, rc (e.g., 1.2.3-beta.1)
+
+**Release Process**
+- Release notes must include: new features, bug fixes, breaking changes, migration guide
+- All changes must be documented in CHANGELOG.md
+- Mobile releases: submit to App Store / Play Store at least 1 week before GA
+- Web releases: can be deployed on-demand with instant rollback capability
+
+## 12. TECH DEBT MANAGEMENT
+
+**Code Quality Metrics**
+- Maximum cyclomatic complexity: 10 per function
+- Maximum nesting depth: 4 levels
+- Minimum method length: >3 lines (avoid trivial methods)
+- Prefer composition over inheritance
+- Keep functions pure and side-effect free where possible
+
+**Deprecation Policy**
+- 6-month deprecation window before removing APIs
+- Provide migration path with examples
+- Maintain compatibility layer during transition
+- Document deprecation reason and alternatives
+
+**Refactoring Standards**
+- Refactoring must not change user-facing behavior
+- Refactoring must maintain or improve test coverage
+- Large refactorings should be separate PRs from feature work
+- Performance improvements require before/after benchmarks
+
+These principles should guide all technical decisions, code reviews, and architectural discussions. They ensure sustainable, scalable, and secure development of the Guandan platform.
+```
+
+## 使用方法
+
+1. **在你的项目目录启动 GitHub Copilot**
+2. **复制上面的完整提示词**
+3. **在 Copilot 中运行**：
+   ```
+   /speckit.constitution
+   ```
+4. **然后粘贴整个提示词**（从"Create comprehensive..."开始到结尾）
+5. **等待 Copilot 生成 constitution.md 文件**
+
+## 生成的文件位置
+
+Copilot 将在以下位置创建配置文件：
+```
+.specify/memory/constitution.md
+```
+
+这个文件将被后续所有开发阶段引用：
+- `/speckit.specify` - 生成功能规范
+- `/speckit.plan` - 生成技术方案
+- `/speckit.tasks` - 生成任务清单
+- `/speckit.implement` - 执行实现
+
+## 提示词的关键特点
+
+✅ **完整性** - 涵盖架构、代码质量、性能、安全、Web3、合规等12个维度
+
+✅ **可测量** - 所有标准都有具体数字（如60 FPS、<300ms延迟、80%覆盖率）
+
+✅ **上下文感知** - 针对掼蛋平台的特定需求（游戏、Token、全球化）
+
+✅ **Copilot友好** - 清晰的结构便于AI理解和执行
+
+✅ **执行性强** - 可直接指导开发工作而非空洞的建议
+
+## 后续步骤
+
+创建好 constitution 后，顺序执行：
+
+1. **`/speckit.specify`** - 定义产品功能（Phase 1/2）
+2. **`/speckit.clarify`** - 澄清需求
+3. **`/speckit.plan`** - 制定技术方案
+4. **`/speckit.analyze`** - 验证一致性
+5. **`/speckit.tasks`** - 生成任务清单
+6. **`/speckit.implement`** - 执行开发
