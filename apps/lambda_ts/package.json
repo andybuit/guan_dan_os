@@ -10,6 +10,8 @@
     "deploy": "tsx scripts/deploy.ts",
     "deploy:hello": "tsx scripts/deploy.ts hello",
     "deploy:user": "tsx scripts/deploy.ts user",
+    "setup:db": "tsx scripts/setup-db.ts",
+    "setup:db:recreate": "tsx scripts/setup-db.ts --recreate",
     "test": "vitest",
     "test:localstack": "vitest --config vitest.localstack.config.ts",
     "localstack:start": "docker compose up -d",
