@@ -1,0 +1,24 @@
+{
+  "name": "@guan-dan-os/lambda_py",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "setup": "uv venv && uv sync --dev",
+    "sync": "uv sync",
+    "sync:dev": "uv sync --dev",
+    "build": "python scripts/build.py",
+    "build:hello": "python scripts/build.py hello",
+    "build:user": "python scripts/build.py user",
+    "deploy": "python scripts/deploy.py",
+    "deploy:hello": "python scripts/deploy.py hello",
+    "deploy:user": "python scripts/deploy.py user",
+    "test": "uv run pytest",
+    "test:localstack": "LOCALSTACK_ENDPOINT=http://localhost:4566 uv run pytest tests/integration/",
+    "test:cov": "uv run pytest --cov",
+    "lint": "uv run ruff check . && uv run black --check .",
+    "lint:fix": "uv run ruff check --fix . && uv run black .",
+    "type-check": "uv run mypy functions/ shared/",
+    "localstack:start": "docker compose up -d",
+    "localstack:stop": "docker compose down"
+  }
+}

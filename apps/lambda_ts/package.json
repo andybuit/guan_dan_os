@@ -1,0 +1,35 @@
+{
+  "name": "@guan-dan-os/lambda_ts",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "build:hello": "tsx scripts/build.ts hello",
+    "build:user": "tsx scripts/build.ts user",
+    "deploy": "tsx scripts/deploy.ts",
+    "deploy:hello": "tsx scripts/deploy.ts hello",
+    "deploy:user": "tsx scripts/deploy.ts user",
+    "test": "vitest",
+    "test:localstack": "vitest --config vitest.localstack.config.ts",
+    "localstack:start": "docker compose up -d",
+    "localstack:stop": "docker compose down"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.9.0",
+    "@aws-lambda-powertools/metrics": "^2.9.0",
+    "@aws-lambda-powertools/tracer": "^2.9.0",
+    "@aws-sdk/client-dynamodb": "^3.668.0",
+    "@aws-sdk/client-lambda": "^3.668.0",
+    "@aws-sdk/client-s3": "^3.668.0",
+    "@aws-sdk/lib-dynamodb": "^3.668.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.9.0",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.5"
+  }
+}

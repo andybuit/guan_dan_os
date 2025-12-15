@@ -1,0 +1,27 @@
+{
+  "hello": {
+    "functionName": "guandan-hello-py",
+    "handler": "functions.hello.handler.handler",
+    "runtime": "python3.13",
+    "role": "arn:aws:iam::ACCOUNT_ID:role/lambda-execution-role",
+    "timeout": 30,
+    "memorySize": 256,
+    "environment": {
+      "LOG_LEVEL": "INFO",
+      "POWERTOOLS_SERVICE_NAME": "hello-lambda"
+    }
+  },
+  "user": {
+    "functionName": "guandan-user-py",
+    "handler": "functions.user.handler.handler",
+    "runtime": "python3.13",
+    "role": "arn:aws:iam::ACCOUNT_ID:role/lambda-execution-role",
+    "timeout": 30,
+    "memorySize": 512,
+    "environment": {
+      "LOG_LEVEL": "INFO",
+      "POWERTOOLS_SERVICE_NAME": "user-lambda",
+      "USERS_TABLE_NAME": "GuanDan-Users"
+    }
+  }
+}
