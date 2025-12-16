@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: guan-dan-os-lambda-py
+Version: 0.0.1
+Summary: AWS Lambda functions in Python with PowerTools
+Requires-Python: >=3.13
+Requires-Dist: aws-lambda-powertools[all]>=3.4.0
+Requires-Dist: boto3>=1.35.0
+Requires-Dist: pydantic[email]>=2.10.0

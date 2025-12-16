@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+functions/__init__.py
+guan_dan_os_lambda_py.egg-info/PKG-INFO
+guan_dan_os_lambda_py.egg-info/SOURCES.txt
+guan_dan_os_lambda_py.egg-info/dependency_links.txt
+guan_dan_os_lambda_py.egg-info/requires.txt
+guan_dan_os_lambda_py.egg-info/top_level.txt
+shared/__init__.py
+shared/utils.py

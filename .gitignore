@@ -33,3 +33,17 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.tox/
+.coverage
+.build
