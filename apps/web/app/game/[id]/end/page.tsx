@@ -26,52 +26,110 @@ interface TributeAction {
 // Mock data
 const mockPlayers: Record<string, Player> = {
   'player-1': {
-    id: 'player-1',
-    nickname: '玩家001',
-    avatar: '',
-    level: 12,
-    coins: 125000,
-    isAI: false,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'SOUTH',
+    profile: {
+      id: 'player-1',
+      nickname: '玩家001',
+      avatar: '',
+      level: 12,
+      coins: 125000,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-1',
+      sessionToken: 'token-1',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
   },
   'player-2': {
-    id: 'player-2',
-    nickname: '玩家002',
-    avatar: '',
-    level: 11,
-    coins: 95000,
-    isAI: false,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'NORTH',
+    profile: {
+      id: 'player-2',
+      nickname: '玩家002',
+      avatar: '',
+      level: 11,
+      coins: 95000,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-2',
+      sessionToken: 'token-2',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
   },
   'ai-1': {
-    id: 'ai-1',
-    nickname: 'AI玩家001',
-    avatar: '',
-    level: 10,
-    coins: 80000,
-    isAI: true,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'EAST',
+    profile: {
+      id: 'ai-1',
+      nickname: 'AI玩家001',
+      avatar: '',
+      level: 10,
+      coins: 80000,
+      isAI: true,
+      aiDifficulty: 'Normal',
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'ai-1',
+      sessionToken: 'token-ai-1',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
   },
   'ai-2': {
-    id: 'ai-2',
-    nickname: 'AI玩家002',
-    avatar: '',
-    level: 9,
-    coins: 70000,
-    isAI: true,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'WEST',
+    profile: {
+      id: 'ai-2',
+      nickname: 'AI玩家002',
+      avatar: '',
+      level: 9,
+      coins: 70000,
+      isAI: true,
+      aiDifficulty: 'Normal',
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'ai-2',
+      sessionToken: 'token-ai-2',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
   },
 };
 
@@ -182,7 +240,7 @@ export default function GameEndPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {mockResults.map((result, index) => (
               <div
-                key={result.player.id}
+                key={result.player.profile.id}
                 className={`border-2 rounded-lg p-6 transition-all ${
                   result.rank === '头游'
                     ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
@@ -200,7 +258,7 @@ export default function GameEndPage() {
                     />
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">
-                        {result.player.nickname}
+                        {result.player.profile.nickname}
                       </p>
                       <p
                         className={`text-lg font-bold ${getRankColor(
@@ -245,7 +303,7 @@ export default function GameEndPage() {
                       </span>
                       <span className="font-semibold text-blue-600 flex items-center gap-1">
                         <ArrowUp size={16} />
-                        Lv.{result.player.level} → Lv.{result.newLevel}
+                        Lv.{result.player.profile.level} → Lv.{result.newLevel}
                       </span>
                     </div>
                   )}
@@ -280,7 +338,7 @@ export default function GameEndPage() {
                       showInfo={false}
                     />
                     <span className="text-gray-900 dark:text-white">
-                      {tribute.from.nickname}
+                      {tribute.from.profile.nickname}
                     </span>
                   </div>
 
@@ -304,7 +362,7 @@ export default function GameEndPage() {
                       showInfo={false}
                     />
                     <span className="text-gray-900 dark:text-white">
-                      {tribute.to.nickname}
+                      {tribute.to.profile.nickname}
                     </span>
                   </div>
                 </div>

@@ -5,38 +5,70 @@ import Countdown from '@/components/ui/Countdown';
 import PlayerAvatar from '@/components/ui/PlayerAvatar';
 import { ToastContainer } from '@/components/ui/Toast';
 import { useToast } from '@/lib/hooks/useToast';
-import type { Player, Room, SeatPosition } from '@guan-dan-os/shared';
+import type { Player, Room } from '@guan-dan-os/shared';
+import { RoomState, SeatPosition, Team } from '@guan-dan-os/shared';
 import { Copy, Crown, LogOut } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 // Mock data
 const mockPlayer: Player = {
-  id: 'player-1',
-  nickname: '玩家001',
-  avatar: '',
-  level: 12,
-  coins: 125000,
-  isAI: false,
-  isReady: false,
-  isConnected: true,
-  roomId: 'room-1',
-  seatPosition: 'SOUTH',
+  profile: {
+    id: 'player-1',
+    nickname: '玩家001',
+    avatar: '',
+    level: 12,
+    coins: 125000,
+    isAI: false,
+  },
+  stats: {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    winRate: 0,
+    currentRank: '2',
+    highestRank: '2',
+    bombsPlayed: 0,
+    firstPlaceCount: 0,
+  },
+  session: {
+    playerId: 'player-1',
+    sessionToken: 'token-1',
+    createdAt: Date.now(),
+    lastActivity: Date.now(),
+    isConnected: true,
+  },
 };
+
+const mockSeatPosition = SeatPosition.SOUTH;
 
 const mockPlayers: Record<string, Player> = {
   'player-1': mockPlayer,
   'ai-1': {
-    id: 'ai-1',
-    nickname: 'AI玩家001',
-    avatar: '',
-    level: 10,
-    coins: 80000,
-    isAI: true,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'NORTH',
+    profile: {
+      id: 'ai-1',
+      nickname: 'AI玩家001',
+      avatar: '',
+      level: 10,
+      coins: 80000,
+      isAI: true,
+      aiDifficulty: 'Normal',
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'ai-1',
+      sessionToken: 'token-ai-1',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
   },
 };
 
@@ -48,59 +80,83 @@ export default function RoomPage() {
 
   const [room, setRoom] = useState<Room>({
     id: roomId,
-    code: 'ABC123',
+    roomCode: 'ABC123',
     hostId: 'player-1',
-    state: 'WAITING',
+    state: RoomState.WAITING,
     seats: {
-      SOUTH: { playerId: 'player-1', isReady: false },
-      NORTH: { playerId: 'ai-1', isReady: true },
-      EAST: null,
-      WEST: null,
+      [SeatPosition.SOUTH]: {
+        position: SeatPosition.SOUTH,
+        player: mockPlayer,
+        isReady: false,
+        isHost: true,
+        team: Team.NS,
+      },
+      [SeatPosition.NORTH]: {
+        position: SeatPosition.NORTH,
+        player: mockPlayers['ai-1'],
+        isReady: true,
+        isHost: false,
+        team: Team.NS,
+      },
+      [SeatPosition.EAST]: {
+        position: SeatPosition.EAST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
+      [SeatPosition.WEST]: {
+        position: SeatPosition.WEST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
     },
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: 1700000000000,
+    updatedAt: 1700000000000,
     config: {
-      baseBet: 100,
-      startingRank: 2,
-      maxPlayers: 4,
+      bet: 100,
+      startingRank: '2',
+      allowAIAutoFill: true,
+      autoFillTimeoutMs: 10000,
+      turnTimeoutMs: 30000,
+      isPrivate: false,
     },
   });
 
-  const [aiCountdown, setAiCountdown] = useState<Record<SeatPosition, number>>({
-    NORTH: 0,
-    SOUTH: 0,
-    EAST: 10,
-    WEST: 10,
+  const [aiCountdown] = useState<Record<SeatPosition, number>>({
+    [SeatPosition.NORTH]: 0,
+    [SeatPosition.SOUTH]: 0,
+    [SeatPosition.EAST]: 10,
+    [SeatPosition.WEST]: 10,
   });
 
   const [startCountdown, setStartCountdown] = useState(0);
 
-  const isHost = room.hostId === mockPlayer.id;
+  const isHost = room.hostId === mockPlayer.profile.id;
   const allSeatsReady = Object.values(room.seats).every(
-    (seat) =>
-      seat === null ||
-      (mockPlayers[seat.playerId] && mockPlayers[seat.playerId].isReady)
+    (seat) => seat.player === null || seat.isReady
   );
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(room.code);
+    navigator.clipboard.writeText(room.roomCode);
     success('房间代码已复制！');
   };
 
   const handleToggleReady = () => {
-    const currentSeat = room.seats[mockPlayer.seatPosition!];
+    const currentSeat = room.seats[mockSeatPosition];
     if (currentSeat) {
       setRoom((prev) => ({
         ...prev,
         seats: {
           ...prev.seats,
-          [mockPlayer.seatPosition!]: {
+          [mockSeatPosition]: {
             ...currentSeat,
             isReady: !currentSeat.isReady,
           },
         },
       }));
-      mockPlayer.isReady = !mockPlayer.isReady;
     }
   };
 
@@ -133,13 +189,14 @@ export default function RoomPage() {
 
   const getSeatPlayer = (position: SeatPosition): Player | null => {
     const seat = room.seats[position];
-    return seat ? mockPlayers[seat.playerId] || null : null;
+    return seat?.player || null;
   };
 
   const renderSeat = (position: SeatPosition, label: string) => {
     const player = getSeatPlayer(position);
-    const isCurrentPlayer = player?.id === mockPlayer.id;
+    const isCurrentPlayer = player?.profile.id === mockPlayer.profile.id;
     const countdown = aiCountdown[position];
+    const seat = room.seats[position];
 
     return (
       <div className="relative">
@@ -157,7 +214,7 @@ export default function RoomPage() {
           </div>
 
           {/* Host Crown */}
-          {player && room.hostId === player.id && (
+          {player && room.hostId === player.profile.id && (
             <div className="absolute top-2 right-2">
               <Crown size={20} className="text-yellow-500" />
             </div>
@@ -166,19 +223,19 @@ export default function RoomPage() {
           {player ? (
             <>
               <PlayerAvatar player={player} size="lg" showInfo={true} />
-              {player.isReady && !isCurrentPlayer && (
+              {seat.isReady && !isCurrentPlayer && (
                 <div className="mt-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm font-semibold">
                   已准备
                 </div>
               )}
               {isCurrentPlayer && (
                 <Button
-                  variant={player.isReady ? 'secondary' : 'primary'}
+                  variant={seat.isReady ? 'secondary' : 'primary'}
                   size="sm"
                   onClick={handleToggleReady}
                   className="mt-3"
                 >
-                  {player.isReady ? '取消准备' : '准备'}
+                  {seat.isReady ? '取消准备' : '准备'}
                 </Button>
               )}
             </>
@@ -208,7 +265,7 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       {/* Header */}
@@ -217,11 +274,10 @@ export default function RoomPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                房间: {room.code}
+                房间: {room.roomCode}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                底注: {room.config.baseBet} • 起始等级:{' '}
-                {room.config.startingRank}
+                底注: {room.config.bet} • 起始等级: {room.config.startingRank}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -254,16 +310,16 @@ export default function RoomPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Top Row */}
           <div className="md:col-span-2 max-w-md mx-auto w-full">
-            {renderSeat('NORTH', '北 (队友)')}
+            {renderSeat(SeatPosition.NORTH, '北 (队友)')}
           </div>
 
           {/* Middle Row */}
-          <div>{renderSeat('WEST', '西 (对手)')}</div>
-          <div>{renderSeat('EAST', '东 (对手)')}</div>
+          <div>{renderSeat(SeatPosition.WEST, '西 (对手)')}</div>
+          <div>{renderSeat(SeatPosition.EAST, '东 (对手)')}</div>
 
           {/* Bottom Row */}
           <div className="md:col-span-2 max-w-md mx-auto w-full">
-            {renderSeat('SOUTH', '南 (你)')}
+            {renderSeat(SeatPosition.SOUTH, '南 (你)')}
           </div>
         </div>
 

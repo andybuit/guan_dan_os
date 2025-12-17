@@ -55,18 +55,20 @@ export default function PlayerAvatar({
             sizeClasses[size]
           )}
         >
-          {player.avatar ? (
+          {player.profile.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={player.avatar}
-              alt={player.nickname}
+              src={player.profile.avatar}
+              alt={player.profile.nickname}
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-2xl">{player.nickname.charAt(0)}</span>
+            <span className="text-2xl">
+              {player.profile.nickname.charAt(0)}
+            </span>
           )}
         </div>
-        {player.isAI && (
+        {player.profile.isAI && (
           <div className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs px-1 rounded">
             AI
           </div>
@@ -75,10 +77,11 @@ export default function PlayerAvatar({
       {showInfo && (
         <div className={cn('text-center', textSizeClasses[size])}>
           <p className="font-semibold text-gray-900 dark:text-gray-100">
-            {player.nickname}
+            {player.profile.nickname}
           </p>
           <p className="text-gray-500 text-xs">
-            Lv.{player.level} • {player.coins.toLocaleString()}币
+            Lv.{player.profile.level} • {player.profile.coins.toLocaleString()}
+            币
           </p>
         </div>
       )}

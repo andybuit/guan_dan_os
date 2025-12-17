@@ -6,61 +6,130 @@ import PlayerAvatar from '@/components/ui/PlayerAvatar';
 import { ToastContainer } from '@/components/ui/Toast';
 import { useToast } from '@/lib/hooks/useToast';
 import type { Player, Room } from '@guan-dan-os/shared';
+import { RoomState, SeatPosition, Team } from '@guan-dan-os/shared';
 import { LogIn, Plus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 // Mock data for development
 const mockPlayer: Player = {
-  id: 'player-1',
-  nickname: '玩家001',
-  avatar: '',
-  level: 12,
-  coins: 125000,
-  isAI: false,
-  isReady: false,
-  isConnected: true,
-  roomId: null,
-  seatPosition: null,
+  profile: {
+    id: 'player-1',
+    nickname: '玩家001',
+    avatar: '',
+    level: 12,
+    coins: 125000,
+    isAI: false,
+  },
+  stats: {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    winRate: 0,
+    currentRank: '2',
+    highestRank: '2',
+    bombsPlayed: 0,
+    firstPlaceCount: 0,
+  },
+  session: {
+    playerId: 'player-1',
+    sessionToken: 'token-1',
+    createdAt: Date.now(),
+    lastActivity: Date.now(),
+    isConnected: true,
+  },
 };
 
 const mockRooms: Room[] = [
   {
     id: 'room-1',
-    code: 'ABC123',
+    roomCode: 'ABC123',
     hostId: 'player-1',
-    state: 'WAITING' as const,
+    state: RoomState.WAITING,
     seats: {
-      SOUTH: { playerId: 'player-1', isReady: false },
-      NORTH: null,
-      EAST: null,
-      WEST: null,
+      [SeatPosition.SOUTH]: {
+        position: SeatPosition.SOUTH,
+        player: null,
+        isReady: false,
+        isHost: true,
+        team: Team.NS,
+      },
+      [SeatPosition.NORTH]: {
+        position: SeatPosition.NORTH,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.NS,
+      },
+      [SeatPosition.EAST]: {
+        position: SeatPosition.EAST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
+      [SeatPosition.WEST]: {
+        position: SeatPosition.WEST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
     config: {
-      baseBet: 100,
-      startingRank: 2,
-      maxPlayers: 4,
+      bet: 100,
+      startingRank: '2',
+      allowAIAutoFill: true,
+      autoFillTimeoutMs: 10000,
+      turnTimeoutMs: 30000,
+      isPrivate: false,
     },
   },
   {
     id: 'room-2',
-    code: 'DEF456',
+    roomCode: 'DEF456',
     hostId: 'player-2',
-    state: 'WAITING' as const,
+    state: RoomState.WAITING,
     seats: {
-      SOUTH: { playerId: 'player-2', isReady: true },
-      NORTH: { playerId: 'ai-1', isReady: true },
-      EAST: null,
-      WEST: null,
+      [SeatPosition.SOUTH]: {
+        position: SeatPosition.SOUTH,
+        player: null,
+        isReady: true,
+        isHost: true,
+        team: Team.NS,
+      },
+      [SeatPosition.NORTH]: {
+        position: SeatPosition.NORTH,
+        player: null,
+        isReady: true,
+        isHost: false,
+        team: Team.NS,
+      },
+      [SeatPosition.EAST]: {
+        position: SeatPosition.EAST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
+      [SeatPosition.WEST]: {
+        position: SeatPosition.WEST,
+        player: null,
+        isReady: false,
+        isHost: false,
+        team: Team.EW,
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
     config: {
-      baseBet: 200,
-      startingRank: 2,
-      maxPlayers: 4,
+      bet: 200,
+      startingRank: '2',
+      allowAIAutoFill: true,
+      autoFillTimeoutMs: 10000,
+      turnTimeoutMs: 30000,
+      isPrivate: false,
     },
   },
 ];
@@ -78,21 +147,48 @@ export default function LobbyPage() {
     // TODO: Call API to create room
     const newRoom: Room = {
       id: `room-${Date.now()}`,
-      code: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      hostId: mockPlayer.id,
-      state: 'WAITING',
+      roomCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      hostId: mockPlayer.profile.id,
+      state: RoomState.WAITING,
       seats: {
-        SOUTH: { playerId: mockPlayer.id, isReady: false },
-        NORTH: null,
-        EAST: null,
-        WEST: null,
+        [SeatPosition.SOUTH]: {
+          position: SeatPosition.SOUTH,
+          player: mockPlayer,
+          isReady: false,
+          isHost: true,
+          team: Team.NS,
+        },
+        [SeatPosition.NORTH]: {
+          position: SeatPosition.NORTH,
+          player: null,
+          isReady: false,
+          isHost: false,
+          team: Team.NS,
+        },
+        [SeatPosition.EAST]: {
+          position: SeatPosition.EAST,
+          player: null,
+          isReady: false,
+          isHost: false,
+          team: Team.EW,
+        },
+        [SeatPosition.WEST]: {
+          position: SeatPosition.WEST,
+          player: null,
+          isReady: false,
+          isHost: false,
+          team: Team.EW,
+        },
       },
       createdAt: Date.now(),
       updatedAt: Date.now(),
       config: {
-        baseBet,
-        startingRank: 2,
-        maxPlayers: 4,
+        bet: baseBet,
+        startingRank: '2',
+        allowAIAutoFill: true,
+        autoFillTimeoutMs: 10000,
+        turnTimeoutMs: 30000,
+        isPrivate: false,
       },
     };
 
@@ -103,7 +199,7 @@ export default function LobbyPage() {
   };
 
   const handleJoinRoom = () => {
-    const room = rooms.find((r) => r.code === roomCode.toUpperCase());
+    const room = rooms.find((r) => r.roomCode === roomCode.toUpperCase());
     if (!room) {
       error('房间代码无效');
       return;
@@ -139,7 +235,7 @@ export default function LobbyPage() {
                 掼蛋大厅
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                欢迎回来，{mockPlayer.nickname}！
+                欢迎回来，{mockPlayer.profile.nickname}！
               </p>
             </div>
             <PlayerAvatar player={mockPlayer} size="md" showInfo={false} />
@@ -197,7 +293,7 @@ export default function LobbyPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
                       <span className="text-blue-700 dark:text-blue-300 font-mono font-bold">
-                        {room.code}
+                        {room.roomCode}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
@@ -214,7 +310,7 @@ export default function LobbyPage() {
                         底注
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {room.config.baseBet}
+                        {room.config.bet}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">

@@ -9,6 +9,10 @@ export * from './types/game';
 export * from './types/player';
 export * from './types/room';
 
+// Export UI components
+export { CardSVG } from './components/cards/CardSVG';
+export type { CardSVGProps } from './components/cards/CardSVG';
+
 // Export utility functions
 export * from './utils/card-comparator';
 export * from './utils/card-validators';

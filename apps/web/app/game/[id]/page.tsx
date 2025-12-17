@@ -1,368 +1,491 @@
 'use client';
 
+import GameCard from '@/components/game/GameCard';
+import HandCards from '@/components/game/HandCards';
+import PlayerPosition from '@/components/game/PlayerPosition';
 import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Countdown from '@/components/ui/Countdown';
-import PlayerAvatar from '@/components/ui/PlayerAvatar';
 import { ToastContainer } from '@/components/ui/Toast';
 import { useToast } from '@/lib/hooks/useToast';
-import type {
-  Card as CardType,
-  Player,
-  SeatPosition,
-} from '@guan-dan-os/shared';
-import { Loader2 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import type { Card, Player } from '@guan-dan-os/shared';
+import { Rank, SeatPosition, Suit } from '@guan-dan-os/shared';
+import { Menu, MessageCircle, Settings, Volume2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
-// Mock data
-const mockPlayer: Player = {
-  id: 'player-1',
-  nickname: '玩家001',
-  avatar: '',
-  level: 12,
-  coins: 125000,
-  isAI: false,
-  isReady: true,
-  isConnected: true,
-  roomId: 'room-1',
-  seatPosition: 'SOUTH',
+// Mock player data
+const mockPlayers: Record<SeatPosition, Player> = {
+  [SeatPosition.SOUTH]: {
+    profile: {
+      id: 'player-1',
+      nickname: '我',
+      avatar: '',
+      level: 12,
+      coins: 67600,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-1',
+      sessionToken: 'token-1',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
+  },
+  [SeatPosition.NORTH]: {
+    profile: {
+      id: 'player-2',
+      nickname: 'rain',
+      avatar: '',
+      level: 10,
+      coins: 11000,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-2',
+      sessionToken: 'token-2',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
+  },
+  [SeatPosition.WEST]: {
+    profile: {
+      id: 'player-3',
+      nickname: '你最珍贵',
+      avatar: '',
+      level: 8,
+      coins: 13400,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-3',
+      sessionToken: 'token-3',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
+  },
+  [SeatPosition.EAST]: {
+    profile: {
+      id: 'player-4',
+      nickname: 'k',
+      avatar: '',
+      level: 15,
+      coins: 17200,
+      isAI: false,
+    },
+    stats: {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      winRate: 0,
+      currentRank: '2',
+      highestRank: '2',
+      bombsPlayed: 0,
+      firstPlaceCount: 0,
+    },
+    session: {
+      playerId: 'player-4',
+      sessionToken: 'token-4',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      isConnected: true,
+    },
+  },
 };
 
-const mockPlayers: Record<string, Player> = {
-  'player-1': mockPlayer,
-  'player-2': {
-    id: 'player-2',
-    nickname: '玩家002',
-    avatar: '',
-    level: 11,
-    coins: 95000,
-    isAI: false,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'NORTH',
-  },
-  'ai-1': {
-    id: 'ai-1',
-    nickname: 'AI玩家001',
-    avatar: '',
-    level: 10,
-    coins: 80000,
-    isAI: true,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'EAST',
-  },
-  'ai-2': {
-    id: 'ai-2',
-    nickname: 'AI玩家002',
-    avatar: '',
-    level: 9,
-    coins: 70000,
-    isAI: true,
-    isReady: true,
-    isConnected: true,
-    roomId: 'room-1',
-    seatPosition: 'WEST',
-  },
-};
+// Generate mock cards for player's hand
+const generateMockHand = (): Card[] => {
+  const cards: Card[] = [];
+  const ranks = [
+    Rank.TWO,
+    Rank.THREE,
+    Rank.FOUR,
+    Rank.SIX,
+    Rank.NINE,
+    Rank.TEN,
+    Rank.JACK,
+    Rank.QUEEN,
+    Rank.ACE,
+  ] as const;
+  const suits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS] as const;
 
-// Generate mock hand
-const generateMockHand = (): CardType[] => {
-  const suits: Array<'hearts' | 'diamonds' | 'clubs' | 'spades'> = [
-    'hearts',
-    'diamonds',
-    'clubs',
-    'spades',
-  ];
-  const hand: CardType[] = [];
-
-  for (let i = 0; i < 27; i++) {
-    const suit = suits[Math.floor(Math.random() * suits.length)];
-    const rank = Math.floor(Math.random() * 13) + 1;
-    hand.push({
-      rank,
-      suit,
-      isWindfall: rank === 2, // Mock: 2s are windfall
+  let id = 0;
+  // Generate some pairs and triples
+  suits.forEach((suit) => {
+    ranks.forEach((rank) => {
+      if (Math.random() > 0.6) {
+        cards.push({
+          id: `card-${id++}`,
+          rank,
+          suit,
+          isRedHeart: suit === '♥',
+        });
+      }
     });
-  }
+  });
 
-  // Sort by rank
-  hand.sort((a, b) => a.rank - b.rank);
-  return hand;
+  return cards.slice(0, 27);
+};
+
+// Generate mock last plays
+const generateMockLastPlay = (position: SeatPosition): Card[] => {
+  if (position === SeatPosition.NORTH) {
+    // K K K 9 9 combo
+    return [
+      { id: 'last-1', rank: Rank.KING, suit: Suit.HEARTS, isRedHeart: true },
+      { id: 'last-2', rank: Rank.KING, suit: Suit.CLUBS },
+      { id: 'last-3', rank: Rank.KING, suit: Suit.DIAMONDS },
+      { id: 'last-4', rank: Rank.NINE, suit: Suit.DIAMONDS },
+      { id: 'last-5', rank: Rank.NINE, suit: Suit.CLUBS },
+    ];
+  } else if (position === SeatPosition.WEST) {
+    // Q Q Q 3 3
+    return [
+      { id: 'last-6', rank: Rank.QUEEN, suit: Suit.SPADES },
+      { id: 'last-7', rank: Rank.QUEEN, suit: Suit.CLUBS },
+      { id: 'last-8', rank: Rank.QUEEN, suit: Suit.SPADES },
+      { id: 'last-9', rank: Rank.THREE, suit: Suit.HEARTS, isRedHeart: true },
+      { id: 'last-10', rank: Rank.THREE, suit: Suit.SPADES },
+    ];
+  }
+  return [];
 };
 
 export default function GamePage() {
-  const router = useRouter();
   const params = useParams();
-  const { toasts, removeToast, error: showError } = useToast();
-  const roomId = params.id as string;
+  const { toasts, removeToast, success, error: showError } = useToast();
+  const gameId = params.id as string;
 
-  const [hand, setHand] = useState<CardType[]>([]);
-  const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
-
-  // Initialize hand on client-side only to avoid hydration mismatch
-  useEffect(() => {
-    setHand(generateMockHand());
-  }, []);
-  const [currentTurn, setCurrentTurn] = useState<SeatPosition>('SOUTH');
-  const [turnTimeLeft, setTurnTimeLeft] = useState(30);
-  const [lastPlay, setLastPlay] = useState<{
-    cards: CardType[];
-    player: string;
-  } | null>(null);
-  const [aiThinking, setAiThinking] = useState(false);
-  const [gameState, setGameState] = useState<{
-    round: number;
-    currentRank: number;
-    cardsLeft: Record<SeatPosition, number>;
-  }>({
-    round: 1,
-    currentRank: 2,
-    cardsLeft: {
-      SOUTH: 27,
-      NORTH: 27,
-      EAST: 27,
-      WEST: 27,
-    },
+  const [myHand, setMyHand] = useState<Card[]>([]);
+  const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+  const [currentTurn, setCurrentTurn] = useState<SeatPosition>(
+    SeatPosition.EAST
+  );
+  const [countdown, setCountdown] = useState(24);
+  const [lastPlays, setLastPlays] = useState<
+    Record<SeatPosition, { cards: Card[]; passed: boolean }>
+  >({
+    [SeatPosition.NORTH]: { cards: [], passed: false },
+    [SeatPosition.SOUTH]: { cards: [], passed: false },
+    [SeatPosition.WEST]: { cards: [], passed: false },
+    [SeatPosition.EAST]: { cards: [], passed: false },
   });
+  const [autoPlay, setAutoPlay] = useState(false);
 
-  const isMyTurn = currentTurn === mockPlayer.seatPosition;
-
-  const handleCardClick = (index: number) => {
-    if (!isMyTurn) return;
-
-    setSelectedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
+  // Initialize cards only on client side to avoid hydration mismatch
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMyHand(generateMockHand());
+    setLastPlays({
+      [SeatPosition.NORTH]: {
+        cards: generateMockLastPlay(SeatPosition.NORTH),
+        passed: false,
+      },
+      [SeatPosition.SOUTH]: { cards: [], passed: false },
+      [SeatPosition.WEST]: {
+        cards: generateMockLastPlay(SeatPosition.WEST),
+        passed: false,
+      },
+      [SeatPosition.EAST]: { cards: [], passed: false },
     });
-  };
+  }, []);
 
-  const handlePlay = () => {
-    if (selectedCards.size === 0) {
-      showError('请选择要出的牌');
+  // Countdown timer
+  useEffect(() => {
+    if (countdown > 0 && currentTurn === SeatPosition.EAST) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown, currentTurn]);
+
+  const handlePlayCards = useCallback(() => {
+    if (selectedCards.length === 0) {
+      showError('请先选择要出的牌');
       return;
     }
 
-    const playedCards = Array.from(selectedCards).map((i) => hand[i]);
-
     // Remove played cards from hand
-    const newHand = hand.filter((_, i) => !selectedCards.has(i));
-    setHand(newHand);
-    setSelectedCards(new Set());
+    setMyHand((prev) =>
+      prev.filter((card) => !selectedCards.some((sc) => sc.id === card.id))
+    );
 
-    setLastPlay({ cards: playedCards, player: mockPlayer.nickname });
-
-    // Update cards left
-    setGameState((prev) => ({
+    // Update last play
+    setLastPlays((prev) => ({
       ...prev,
-      cardsLeft: {
-        ...prev.cardsLeft,
-        SOUTH: newHand.length,
-      },
+      [SeatPosition.SOUTH]: { cards: selectedCards, passed: false },
     }));
 
+    setSelectedCards([]);
+    success('出牌成功');
+
     // Move to next turn
-    nextTurn();
-  };
+    setCurrentTurn(SeatPosition.WEST);
+  }, [selectedCards, showError, success]);
 
-  const handlePass = () => {
-    setLastPlay({ cards: [], player: mockPlayer.nickname });
-    setSelectedCards(new Set());
-    nextTurn();
-  };
+  const handlePass = useCallback(() => {
+    setLastPlays((prev) => ({
+      ...prev,
+      [SeatPosition.SOUTH]: { cards: [], passed: true },
+    }));
+    success('已选择不出');
+    setCurrentTurn(SeatPosition.WEST);
+  }, [success]);
 
-  const nextTurn = () => {
-    const order: SeatPosition[] = ['SOUTH', 'WEST', 'NORTH', 'EAST'];
-    const currentIndex = order.indexOf(currentTurn);
-    const nextPosition = order[(currentIndex + 1) % 4];
-    setCurrentTurn(nextPosition);
-    setTurnTimeLeft(30);
+  const handleSort = useCallback(() => {
+    setMyHand((prev) => {
+      const sorted = [...prev];
+      sorted.sort((a, b) => {
+        // Sort by rank first, then by suit
+        const rankOrder: Record<Rank, number> = {
+          '2': 2,
+          '3': 3,
+          '4': 4,
+          '5': 5,
+          '6': 6,
+          '7': 7,
+          '8': 8,
+          '9': 9,
+          '10': 10,
+          J: 11,
+          Q: 12,
+          K: 13,
+          A: 14,
+          SmallJoker: 15,
+          BigJoker: 16,
+        };
+        const rankDiff = (rankOrder[a.rank] || 0) - (rankOrder[b.rank] || 0);
+        if (rankDiff !== 0) return rankDiff;
 
-    // Simulate AI thinking
-    if (mockPlayers[getPlayerAtSeat(nextPosition)]?.isAI) {
-      setAiThinking(true);
-      setTimeout(() => {
-        setAiThinking(false);
-        // Simulate AI play or pass
-        const shouldPlay = Math.random() > 0.3;
-        if (shouldPlay) {
-          // Auto-play for AI
-          nextTurn();
-        } else {
-          nextTurn();
-        }
-      }, 2000);
-    }
-  };
+        const suitOrder: Record<Suit, number> = {
+          '♠': 1,
+          '♥': 2,
+          '♣': 3,
+          '♦': 4,
+          JOKER: 5,
+        };
+        return (suitOrder[a.suit] || 0) - (suitOrder[b.suit] || 0);
+      });
+      return sorted;
+    });
+    success('理牌完成');
+  }, [success]);
 
-  const getPlayerAtSeat = (position: SeatPosition): string => {
-    return (
-      Object.values(mockPlayers).find((p) => p.seatPosition === position)?.id ||
-      ''
-    );
-  };
-
-  const renderPlayerArea = (position: SeatPosition, className: string) => {
-    const player = Object.values(mockPlayers).find(
-      (p) => p.seatPosition === position
-    );
-    if (!player) return null;
-
-    const isCurrentTurn = currentTurn === position;
-    const cardsLeft = gameState.cardsLeft[position];
-
-    return (
-      <div className={`flex flex-col items-center gap-2 ${className}`}>
-        <div className="relative">
-          <PlayerAvatar player={player} size="md" showInfo={false} />
-          {isCurrentTurn && (
-            <div className="absolute -top-2 -right-2">
-              <Countdown seconds={turnTimeLeft} size="sm" />
-            </div>
-          )}
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {player.nickname}
-          </p>
-          <p className="text-xs text-gray-500">剩余: {cardsLeft}张</p>
-        </div>
-        {player.isAI && isCurrentTurn && aiThinking && (
-          <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400 text-sm">
-            <Loader2 size={14} className="animate-spin" />
-            <span>思考中...</span>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const handleToggleAutoPlay = useCallback(() => {
+    setAutoPlay((prev) => !prev);
+    success(autoPlay ? '已取消托管' : '已开启托管');
+  }, [autoPlay, success]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-linear-to-br from-teal-600 via-teal-700 to-teal-800 relative overflow-hidden">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Game Board */}
-      <div className="h-screen flex flex-col p-4">
-        {/* Top Area - North Player */}
-        <div className="flex justify-center py-4">
-          {renderPlayerArea('NORTH', '')}
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '50px 50px',
+          }}
+        />
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 flex items-center justify-between px-4 py-3 bg-black/20">
+        <div className="flex items-center gap-3">
+          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <Menu className="text-white" size={24} />
+          </button>
+          <div className="text-white text-sm">
+            <div className="font-semibold">房间: {gameId}</div>
+            <div className="text-xs opacity-80">底注: 100 • 等级: 2</div>
+          </div>
         </div>
 
-        {/* Middle Area - West, Center, East */}
-        <div className="flex-1 flex items-center justify-between px-8">
-          {/* West Player */}
-          <div className="w-32">{renderPlayerArea('WEST', '')}</div>
+        <div className="flex items-center gap-2">
+          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <Volume2 className="text-white" size={20} />
+          </button>
+          <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+            <Settings className="text-white" size={20} />
+          </button>
+          <button className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition-colors">
+            规则
+          </button>
+        </div>
+      </header>
+
+      {/* Main Game Area */}
+      <main className="relative z-10 h-[calc(100vh-60px)] flex flex-col">
+        {/* Top Player */}
+        <div className="flex justify-center pt-4">
+          <PlayerPosition
+            player={mockPlayers[SeatPosition.NORTH]}
+            position="top"
+            remainingCards={15}
+            lastPlay={lastPlays[SeatPosition.NORTH].cards}
+            isPassed={lastPlays[SeatPosition.NORTH].passed}
+            isCurrentTurn={currentTurn === SeatPosition.NORTH}
+          />
+        </div>
+
+        {/* Middle Section - Left, Center, Right */}
+        <div className="flex-1 flex items-center justify-between px-4 py-4">
+          {/* Left Player */}
+          <PlayerPosition
+            player={mockPlayers[SeatPosition.WEST]}
+            position="left"
+            remainingCards={18}
+            lastPlay={lastPlays[SeatPosition.WEST].cards}
+            isPassed={lastPlays[SeatPosition.WEST].passed}
+            isCurrentTurn={currentTurn === SeatPosition.WEST}
+          />
 
           {/* Center Play Area */}
-          <div className="flex-1 max-w-2xl mx-8">
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg shadow-lg p-6 min-h-[200px]">
-              {/* Game Info */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    回合:{' '}
-                  </span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {gameState.round}
-                  </span>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
+            {/* Watermark */}
+            <div className="text-white/10 text-6xl font-bold select-none">
+              腾讯游戏
+            </div>
+
+            {/* Center Cards Display - showing table cards */}
+            <div className="flex flex-wrap gap-2 justify-center max-w-2xl">
+              {/* Show some cards on the table */}
+              {lastPlays[SeatPosition.SOUTH].cards.length > 0 && (
+                <div className="bg-black/30 rounded-lg p-3">
+                  <div className="text-white text-xs mb-2 text-center">
+                    我的出牌
+                  </div>
+                  <div className="flex gap-1">
+                    {lastPlays[SeatPosition.SOUTH].cards.map((card) => (
+                      <GameCard key={card.id} card={card} size="sm" />
+                    ))}
+                  </div>
                 </div>
-                <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    当前等级:{' '}
-                  </span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {gameState.currentRank}
-                  </span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    轮到:{' '}
-                  </span>
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">
-                    {mockPlayers[getPlayerAtSeat(currentTurn)]?.nickname}
-                  </span>
-                </div>
+              )}
+            </div>
+
+            {/* Team Score Display */}
+            <div className="flex gap-8 text-white">
+              <div className="text-center">
+                <div className="text-xs opacity-80">我方</div>
+                <div className="text-2xl font-bold">0</div>
               </div>
-
-              {/* Last Play */}
-              {lastPlay && (
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {lastPlay.player}{' '}
-                    {lastPlay.cards.length === 0 ? '过牌' : '出牌'}:
-                  </p>
-                  {lastPlay.cards.length > 0 && (
-                    <div className="flex justify-center gap-2 flex-wrap">
-                      {lastPlay.cards.map((card, i) => (
-                        <Card key={i} card={card} size="sm" />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!lastPlay && (
-                <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
-                  等待第一手牌...
-                </div>
-              )}
+              <div className="text-4xl font-bold opacity-50">VS</div>
+              <div className="text-center">
+                <div className="text-xs opacity-80">对方</div>
+                <div className="text-2xl font-bold">0</div>
+              </div>
             </div>
           </div>
 
-          {/* East Player */}
-          <div className="w-32">{renderPlayerArea('EAST', '')}</div>
+          {/* Right Player */}
+          <PlayerPosition
+            player={mockPlayers[SeatPosition.EAST]}
+            position="right"
+            remainingCards={20}
+            lastPlay={lastPlays[SeatPosition.EAST].cards}
+            isPassed={lastPlays[SeatPosition.EAST].passed}
+            isCurrentTurn={currentTurn === SeatPosition.EAST}
+            countdown={countdown}
+          />
         </div>
 
-        {/* Bottom Area - South Player (You) */}
-        <div className="py-4">
-          {/* Hand Cards */}
-          <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-lg p-4 mb-4">
-            <div className="flex justify-center gap-1 flex-wrap">
-              {hand.map((card, index) => (
-                <Card
-                  key={index}
-                  card={card}
-                  size="md"
-                  selected={selectedCards.has(index)}
-                  onClick={() => handleCardClick(index)}
-                />
-              ))}
-            </div>
-          </div>
-
+        {/* Bottom Section - Player's Hand and Controls */}
+        <div className="bg-linear-to-t from-black/40 to-transparent pt-4 pb-2 px-4">
           {/* Control Buttons */}
-          <div className="flex items-center justify-center gap-4">
-            {renderPlayerArea('SOUTH', '')}
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={handlePass}
-                disabled={!isMyTurn || aiThinking}
-                className="min-w-[120px]"
-              >
-                不出
-              </Button>
-              <Button
-                size="lg"
-                onClick={handlePlay}
-                disabled={!isMyTurn || selectedCards.size === 0 || aiThinking}
-                className="min-w-[120px]"
-              >
-                出牌 {selectedCards.size > 0 && `(${selectedCards.size})`}
-              </Button>
+          <div className="flex justify-center gap-3 mb-3">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handlePlayCards}
+              disabled={
+                selectedCards.length === 0 || currentTurn !== SeatPosition.SOUTH
+              }
+              className="px-8"
+            >
+              出牌
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handlePass}
+              disabled={currentTurn !== SeatPosition.SOUTH}
+              className="px-8"
+            >
+              不出
+            </Button>
+            <Button
+              variant={autoPlay ? 'danger' : 'ghost'}
+              size="lg"
+              onClick={handleToggleAutoPlay}
+              className="px-6"
+            >
+              {autoPlay ? '取消托管' : '托管'}
+            </Button>
+            <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+              <MessageCircle className="text-white" size={24} />
+            </button>
+          </div>
+
+          {/* Player's Hand */}
+          <HandCards
+            cards={myHand}
+            selectedCards={selectedCards}
+            onSelectionChange={setSelectedCards}
+            onSort={handleSort}
+            disabled={currentTurn !== SeatPosition.SOUTH}
+          />
+
+          {/* Bottom Player Info */}
+          <div className="flex justify-between items-center mt-2 px-4">
+            <div className="text-white text-xs">
+              <div>玩家ID: 312167133</div>
+              <div className="flex items-center gap-1">
+                <span>💰</span>
+                <span>
+                  {(
+                    mockPlayers[SeatPosition.SOUTH].profile.coins / 10000
+                  ).toFixed(2)}
+                  万
+                </span>
+              </div>
+            </div>
+            <div className="text-white text-xs">
+              <div>当前等级: 2</div>
+              <div>本局底注: 100</div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
