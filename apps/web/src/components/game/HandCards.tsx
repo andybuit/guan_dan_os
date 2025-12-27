@@ -26,14 +26,17 @@ export default function HandCards({
 
   // Group cards by rank and suit
   const groupedCards = useMemo(() => {
-    const groups = cards.reduce((acc, card) => {
-      const key = `${card.rank}-${card.suit}`;
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(card);
-      return acc;
-    }, {} as Record<string, Card[]>);
+    const groups = cards.reduce(
+      (acc, card) => {
+        const key = `${card.rank}-${card.suit}`;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(card);
+        return acc;
+      },
+      {} as Record<string, Card[]>
+    );
 
     // Convert to array and sort
     return Object.entries(groups).sort(([a], [b]) => {
@@ -41,14 +44,33 @@ export default function HandCards({
       const [rankB, suitB] = b.split('-');
 
       const rankOrder: Record<string, number> = {
-        '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
-        'J': 11, 'Q': 12, 'K': 13, 'A': 14, 'SmallJoker': 15, 'BigJoker': 16,
+        '2': 2,
+        '3': 3,
+        '4': 4,
+        '5': 5,
+        '6': 6,
+        '7': 7,
+        '8': 8,
+        '9': 9,
+        '10': 10,
+        J: 11,
+        Q: 12,
+        K: 13,
+        A: 14,
+        SmallJoker: 15,
+        BigJoker: 16,
       };
 
       const rankDiff = (rankOrder[rankA] || 0) - (rankOrder[rankB] || 0);
       if (rankDiff !== 0) return rankDiff;
 
-      const suitOrder: Record<string, number> = { '♠': 1, '♥': 2, '♣': 3, '♦': 4, 'JOKER': 5 };
+      const suitOrder: Record<string, number> = {
+        '♠': 1,
+        '♥': 2,
+        '♣': 3,
+        '♦': 4,
+        JOKER: 5,
+      };
       return (suitOrder[suitA] || 0) - (suitOrder[suitB] || 0);
     });
   }, [cards]);
@@ -148,26 +170,33 @@ export default function HandCards({
         >
           {groupedCards.map(([key, cardGroup]) => {
             const allSelected = cardGroup.every((card: Card) =>
-              selectedCards.some(c => c.id === card.id)
+              selectedCards.some((c) => c.id === card.id)
             );
             const someSelected = cardGroup.some((card: Card) =>
-              selectedCards.some(c => c.id === card.id)
+              selectedCards.some((c) => c.id === card.id)
             );
 
             // Calculate vertical overlap based on card size (for same rank cards stacking vertically)
             const getVerticalOverlapOffset = () => {
               switch (cardSize) {
-                case 'sm': return 16;  // Vertical overlap for small cards
-                case 'md': return 20;  // Vertical overlap for medium cards
-                case 'lg': return 24;  // Vertical overlap for large cards
-                default: return 20;
+                case 'sm':
+                  return 16; // Vertical overlap for small cards
+                case 'md':
+                  return 20; // Vertical overlap for medium cards
+                case 'lg':
+                  return 24; // Vertical overlap for large cards
+                default:
+                  return 20;
               }
             };
 
             const verticalOverlap = getVerticalOverlapOffset();
-            const groupWidth = cardSize === 'lg' ? 80 : cardSize === 'md' ? 64 : 48;
-            const baseHeight = cardSize === 'lg' ? 120 : cardSize === 'md' ? 96 : 72;
-            const stackHeight = baseHeight + (cardGroup.length - 1) * verticalOverlap;
+            const groupWidth =
+              cardSize === 'lg' ? 80 : cardSize === 'md' ? 64 : 48;
+            const baseHeight =
+              cardSize === 'lg' ? 120 : cardSize === 'md' ? 96 : 72;
+            const stackHeight =
+              baseHeight + (cardGroup.length - 1) * verticalOverlap;
 
             return (
               <div
@@ -179,7 +208,9 @@ export default function HandCards({
                 }}
               >
                 {cardGroup.map((card: Card, cardIndex: number) => {
-                  const isCardSelected = selectedCards.some(c => c.id === card.id);
+                  const isCardSelected = selectedCards.some(
+                    (c) => c.id === card.id
+                  );
                   return (
                     <div
                       key={card.id}
@@ -201,7 +232,8 @@ export default function HandCards({
                         disabled={disabled}
                         className={cn(
                           'shadow-sm hover:shadow-lg transition-all',
-                          isCardSelected && 'ring-2 ring-blue-500 ring-offset-1 -translate-y-2'
+                          isCardSelected &&
+                            'ring-2 ring-blue-500 ring-offset-1 -translate-y-2'
                         )}
                       />
                     </div>
