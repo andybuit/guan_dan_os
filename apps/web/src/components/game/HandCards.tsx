@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { Card } from '@guan-dan-os/shared';
 import { ArrowDownUp, Sparkles } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import GameCard from './GameCard';
 
 interface HandCardsProps {
@@ -22,6 +22,64 @@ export default function HandCards({
   className,
 }: HandCardsProps) {
   const [sortBy, setSortBy] = useState<'rank' | 'suit'>('rank');
+  const [cardSize, setCardSize] = useState<'sm' | 'md' | 'lg'>('md');
+
+  // Group cards by rank and suit
+  const groupedCards = useMemo(() => {
+    const groups = cards.reduce((acc, card) => {
+      const key = `${card.rank}-${card.suit}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(card);
+      return acc;
+    }, {} as Record<string, Card[]>);
+
+    // Convert to array and sort
+    return Object.entries(groups).sort(([a], [b]) => {
+      const [rankA, suitA] = a.split('-');
+      const [rankB, suitB] = b.split('-');
+
+      const rankOrder: Record<string, number> = {
+        '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
+        'J': 11, 'Q': 12, 'K': 13, 'A': 14, 'SmallJoker': 15, 'BigJoker': 16,
+      };
+
+      const rankDiff = (rankOrder[rankA] || 0) - (rankOrder[rankB] || 0);
+      if (rankDiff !== 0) return rankDiff;
+
+      const suitOrder: Record<string, number> = { '♠': 1, '♥': 2, '♣': 3, '♦': 4, 'JOKER': 5 };
+      return (suitOrder[suitA] || 0) - (suitOrder[suitB] || 0);
+    });
+  }, [cards]);
+
+  // Determine card size based on total number of cards and screen width
+  useEffect(() => {
+    const updateCardSize = () => {
+      const screenWidth = window.innerWidth;
+      const totalCards = cards.length;
+
+      if (screenWidth < 640) {
+        setCardSize('sm'); // Mobile - always use small
+      } else if (screenWidth < 1024) {
+        // Tablet - adjust based on card count
+        setCardSize(totalCards > 15 ? 'sm' : 'md');
+      } else {
+        // Desktop - adjust based on card count
+        if (totalCards > 20) {
+          setCardSize('sm');
+        } else if (totalCards > 10) {
+          setCardSize('md');
+        } else {
+          setCardSize('lg');
+        }
+      }
+    };
+
+    updateCardSize();
+    window.addEventListener('resize', updateCardSize);
+    return () => window.removeEventListener('resize', updateCardSize);
+  }, [cards.length]);
 
   const handleCardClick = useCallback(
     (card: Card) => {
@@ -81,33 +139,84 @@ export default function HandCards({
       <div className="relative">
         <div
           className={cn(
-            'flex justify-center items-end gap-0.5 overflow-x-auto pb-2',
-            'min-h-[120px]'
+            'flex justify-center items-start overflow-x-auto pb-2',
+            'min-h-[140px] px-4'
           )}
           style={{
-            // Create overlap effect for cards
-            marginLeft: cards.length > 15 ? '-2rem' : '0',
+            gap: cardSize === 'lg' ? '12px' : cardSize === 'md' ? '8px' : '4px',
           }}
         >
-          {cards.map((card, index) => {
-            const isSelected = selectedCards.some((c) => c.id === card.id);
+          {groupedCards.map(([key, cardGroup]) => {
+            const allSelected = cardGroup.every((card: Card) =>
+              selectedCards.some(c => c.id === card.id)
+            );
+            const someSelected = cardGroup.some((card: Card) =>
+              selectedCards.some(c => c.id === card.id)
+            );
+
+            // Calculate vertical overlap based on card size (for same rank cards stacking vertically)
+            const getVerticalOverlapOffset = () => {
+              switch (cardSize) {
+                case 'sm': return 16;  // Vertical overlap for small cards
+                case 'md': return 20;  // Vertical overlap for medium cards
+                case 'lg': return 24;  // Vertical overlap for large cards
+                default: return 20;
+              }
+            };
+
+            const verticalOverlap = getVerticalOverlapOffset();
+            const groupWidth = cardSize === 'lg' ? 80 : cardSize === 'md' ? 64 : 48;
+            const baseHeight = cardSize === 'lg' ? 120 : cardSize === 'md' ? 96 : 72;
+            const stackHeight = baseHeight + (cardGroup.length - 1) * verticalOverlap;
+
             return (
               <div
-                key={card.id}
-                className="relative"
+                key={key}
+                className="relative transition-all duration-200"
                 style={{
-                  marginLeft: index > 0 && cards.length > 15 ? '-2.5rem' : '0',
-                  zIndex: isSelected ? 100 : cards.length - index,
+                  width: `${groupWidth}px`,
+                  height: `${stackHeight}px`,
                 }}
               >
-                <GameCard
-                  card={card}
-                  selected={isSelected}
-                  onClick={() => handleCardClick(card)}
-                  size="md"
-                  disabled={disabled}
-                  className="transition-all duration-200"
-                />
+                {cardGroup.map((card: Card, cardIndex: number) => {
+                  const isCardSelected = selectedCards.some(c => c.id === card.id);
+                  return (
+                    <div
+                      key={card.id}
+                      className={cn(
+                        'absolute transition-all duration-200',
+                        'cursor-pointer hover:z-[150]'
+                      )}
+                      style={{
+                        top: `${cardIndex * verticalOverlap}px`,
+                        left: 0,
+                        zIndex: isCardSelected ? 100 + cardIndex : cardIndex,
+                      }}
+                      onClick={() => handleCardClick(card)}
+                    >
+                      <GameCard
+                        card={card}
+                        selected={isCardSelected}
+                        size={cardSize}
+                        disabled={disabled}
+                        className={cn(
+                          'shadow-sm hover:shadow-lg transition-all',
+                          isCardSelected && 'ring-2 ring-blue-500 ring-offset-1 -translate-y-2'
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+
+                {/* Card count indicator for stacks */}
+                {cardGroup.length > 1 && (
+                  <div
+                    className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-lg pointer-events-none"
+                    style={{ zIndex: 200 }}
+                  >
+                    {cardGroup.length}
+                  </div>
+                )}
               </div>
             );
           })}

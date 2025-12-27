@@ -28,7 +28,10 @@
       "Bash(uv run python:*)",
       "Bash(git checkout:*)",
       "Bash(uv run ruff check:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm ls:*)"
     ],
     "deny": [],
     "ask": []

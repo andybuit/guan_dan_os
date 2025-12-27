@@ -10,7 +10,7 @@ export * from './types/player';
 export * from './types/room';
 
 // Export UI components
-export { CardSVG } from './components/cards/CardSVG';
+export { CardSVG, CardBack } from './components/cards/CardSVG';
 export type { CardSVGProps } from './components/cards/CardSVG';
 
 // Export utility functions

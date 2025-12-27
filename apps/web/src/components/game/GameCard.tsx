@@ -12,7 +12,7 @@ interface GameCardProps {
   faceDown?: boolean;
 }
 
-// Map suits to CardSVG format
+// Map suit symbols to CardSVG format
 const mapSuitToSVG = (
   suit: string
 ): 'spades' | 'hearts' | 'diamonds' | 'clubs' | 'joker' => {
@@ -29,28 +29,6 @@ const mapSuitToSVG = (
   return mapping[suit] || 'spades';
 };
 
-// Map rank to display format
-const mapRankToDisplay = (rank: string): string => {
-  const mapping: Record<string, string> = {
-    '2': '2',
-    '3': '3',
-    '4': '4',
-    '5': '5',
-    '6': '6',
-    '7': '7',
-    '8': '8',
-    '9': '9',
-    '10': '10',
-    J: 'J',
-    Q: 'Q',
-    K: 'K',
-    A: 'A',
-    SmallJoker: '小王',
-    BigJoker: '大王',
-  };
-  return mapping[rank] || rank.toString();
-};
-
 export default function GameCard({
   card,
   selected = false,
@@ -60,7 +38,6 @@ export default function GameCard({
   disabled = false,
   faceDown = false,
 }: GameCardProps) {
-  const displayRank = mapRankToDisplay(card.rank);
   const svgSuit = mapSuitToSVG(card.suit);
 
   const sizeMap = {
@@ -101,7 +78,7 @@ export default function GameCard({
       onClick={!disabled ? onClick : undefined}
     >
       <CardSVG
-        rank={displayRank}
+        rank={card.rank}
         suit={svgSuit}
         width={dimensions.width}
         height={dimensions.height}
